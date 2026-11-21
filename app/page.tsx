@@ -119,7 +119,7 @@ export default function Home() {
             <a
           className="wordmark"
     href = "#top"
-    aria - label="Iya Elardo home"
+    aria-label="Iya Elardo home"
         >
         IYA<span>.</span>
         </a>
@@ -128,15 +128,15 @@ export default function Home() {
     className = "menu-toggle"
     onClick = {() => setMenuOpen(!menuOpen)
 }
-aria - expanded={ menuOpen }
-aria - label="Toggle navigation"
+aria-expanded={ menuOpen }
+aria-label="Toggle navigation"
     >
 { menuOpen? "CLOSE −": "MENU +" }
     </button>
 
     < nav
 className = { menuOpen? "nav nav-open": "nav" }
-aria - label="Main navigation"
+aria-label="Main navigation"
     >
 {
     navLinks.map(([label, href]) => (
@@ -154,7 +154,7 @@ aria - label="Main navigation"
 {/* HERO */ }
 <section
         className="hero hero-centered"
-aria - labelledby="hero-title"
+aria-labelledby="hero-title"
     >
     <div className="hero-copy-block" >
         <p className="eyebrow" >
@@ -271,7 +271,7 @@ played.New projects will be added as they are completed.
           </p>
     </div>
 
-    < div className = "filter-row" aria - label="Filter projects" >
+    < div className = "filter-row" aria-label="Filter projects" >
     {
         filters.map((item) => (
             <button
@@ -334,7 +334,7 @@ key = { project.number }
                         < button
 className = "project-more-button"
 onClick = {() => setSelectedProject(project)}
-aria - label={ `More details about ${project.title}` }
+aria-label={ `More details about ${project.title}` }
               >
     More details<span>↗</span>
         </button>
@@ -394,14 +394,14 @@ projects.
         <section
             className="project-modal"
     role = "dialog"
-    aria - modal="true"
-    aria - labelledby="project-modal-title"
+    aria-modal="true"
+    aria-labelledby="project-modal-title"
         >
         <button
               className="project-modal-close"
     onClick = {() => setSelectedProject(null)
 }
-aria - label="Close project details"
+aria-label="Close project details"
     >
               ×
 </button>
