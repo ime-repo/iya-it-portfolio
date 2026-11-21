@@ -116,23 +116,27 @@ export default function Home() {
         <main id= "top" >
         {/* HEADER */ }
         < header className = "site-header" >
-            <a className="wordmark" href = "#top" aria-label="Iya Elardo home" >
-                IYA<span>.</span>
-                </a>
+            <a
+          className="wordmark"
+    href = "#top"
+    aria - label="Iya Elardo home"
+        >
+        IYA<span>.</span>
+        </a>
 
-                < button
+        < button
     className = "menu-toggle"
     onClick = {() => setMenuOpen(!menuOpen)
 }
-aria-expanded={ menuOpen }
-aria-label="Toggle navigation"
+aria - expanded={ menuOpen }
+aria - label="Toggle navigation"
     >
 { menuOpen? "CLOSE −": "MENU +" }
     </button>
 
     < nav
 className = { menuOpen? "nav nav-open": "nav" }
-aria-label="Main navigation"
+aria - label="Main navigation"
     >
 {
     navLinks.map(([label, href]) => (
@@ -144,11 +148,13 @@ aria-label="Main navigation"
 { label }
     </a>
           ))}
+</nav>
+    </header>
 
 {/* HERO */ }
 <section
         className="hero hero-centered"
-aria-labelledby="hero-title"
+aria - labelledby="hero-title"
     >
     <div className="hero-copy-block" >
         <p className="eyebrow" >
@@ -175,6 +181,7 @@ aria-labelledby="hero-title"
         <a className="button-primary" href = "#work" >
             Explore selected work<span>↘</span>
                 </a>
+
                 < a className = "text-link" href = "#contact" >
                     Get in touch<span>↗</span>
                         </a>
@@ -231,10 +238,12 @@ href = "mailto:iyamelardo@gmail.com"
             <strong>BSIT </strong>
             < span > FIELD OF STUDY </span>
                 </div>
+
                 < div >
                 <strong>NC II </strong>
                     < span > TESDA CERTIFICATION </span>
                         </div>
+
                         < div >
                         <strong>∞</strong>
                             < span > ROOM TO GROW </span>
@@ -262,7 +271,7 @@ played.New projects will be added as they are completed.
           </p>
     </div>
 
-    < div className = "filter-row" aria-label="Filter projects" >
+    < div className = "filter-row" aria - label="Filter projects" >
     {
         filters.map((item) => (
             <button
@@ -325,7 +334,7 @@ key = { project.number }
                         < button
 className = "project-more-button"
 onClick = {() => setSelectedProject(project)}
-aria-label={ `More details about ${project.title}` }
+aria - label={ `More details about ${project.title}` }
               >
     More details<span>↗</span>
         </button>
@@ -352,7 +361,9 @@ projects.
         additionalWork.map((item) => (
             <article className= "skill-card" key = { item.title } >
             <span className="skill-index" > { item.type } </span>
+
             < h3 > { item.title } </h3>
+
             < p > { item.description } </p>
 
         < div className = "role-row" >
@@ -383,14 +394,14 @@ projects.
         <section
             className="project-modal"
     role = "dialog"
-    aria-modal="true"
-    aria-labelledby="project-modal-title"
+    aria - modal="true"
+    aria - labelledby="project-modal-title"
         >
         <button
               className="project-modal-close"
     onClick = {() => setSelectedProject(null)
 }
-aria-label="Close project details"
+aria - label="Close project details"
     >
               ×
 </button>
@@ -411,41 +422,38 @@ aria-label="Close project details"
                 < div className = "project-modal-gallery" >
                     <div className="project-image-placeholder" >
                         <span>PROJECT IMAGE 01 </span>
-                            <p>
-                  Your project screenshot can be placed here.
-                </p>
-    </div>
-
-    < div className = "project-image-placeholder" >
-        <span>PROJECT IMAGE 02 </span>
-            <p>
-                  Add another interface or project screenshot here.
-                </p>
-    </div>
-    </div>
-
-    < div className = "project-modal-section" >
-        <span className="eyebrow" > ABOUT THE PROJECT </span>
-            < p > { selectedProject.details } </p>
-            </div>
-
-            < div className = "project-modal-section" >
-                <span className="eyebrow" > MY CONTRIBUTION </span>
-                    < p > { selectedProject.role } </p>
-                    </div>
-
-                    < div className = "project-modal-section" >
-                        <span className="eyebrow" > TOOLS & TECHNOLOGIES </span>
-                            < div className = "tag-list" >
-                            {
-                                selectedProject.stack.map((tag) => (
-                                    <span key= { tag } > { tag } </span>
-                                ))
-                            }
+                            < p > Your project screenshot can be placed here.</p>
                                 </div>
-                                </div>
-                                </section>
-                                </div>
+
+                                < div className = "project-image-placeholder" >
+                                    <span>PROJECT IMAGE 02 </span>
+                                        < p > Add another interface or project screenshot here.</p>
+                                            </div>
+                                            </div>
+
+                                            < div className = "project-modal-section" >
+                                                <span className="eyebrow" > ABOUT THE PROJECT </span>
+                                                    < p > { selectedProject.details } </p>
+                                                    </div>
+
+                                                    < div className = "project-modal-section" >
+                                                        <span className="eyebrow" > MY CONTRIBUTION </span>
+                                                            < p > { selectedProject.role } </p>
+                                                            </div>
+
+                                                            < div className = "project-modal-section" >
+                                                                <span className="eyebrow" > TOOLS & TECHNOLOGIES </span>
+
+                                                                    < div className = "tag-list" >
+                                                                    {
+                                                                        selectedProject.stack.map((tag) => (
+                                                                            <span key= { tag } > { tag } </span>
+                                                                        ))
+                                                                    }
+                                                                        </div>
+                                                                        </div>
+                                                                        </section>
+                                                                        </div>
       )}
 
 {/* TOOLKIT */ }
@@ -508,10 +516,13 @@ aria-label="Close project details"
                 < div className = "education-list" >
                     <article>
                     <div className="edu-date" > 2023 — PRESENT </div>
+
                         <h3>
                 Bachelor of Science in Information Technology
     </h3>
+
     < p > Universidad de Manila </p>
+
         <small>
                 Relevant coursework: Systems Analysis and Design,
     Web Development, Human - Computer Interaction.
@@ -520,7 +531,9 @@ aria-label="Close project details"
 
         < article >
         <div className="edu-date" > 2021 — 2023 </div>
+
             < h3 > Senior High School · ICT Strand </h3>
+
                 <p>
                 Computer Programming and Computer Systems
                 Servicing coursework.
@@ -529,7 +542,9 @@ aria-label="Close project details"
 
     < article >
     <div className="edu-date" > TESDA · 2023 </div>
+
         < h3 > Computer Systems Servicing NC II </h3>
+
             < p > National Certificate II </p>
                 </article>
                 </div>
@@ -569,11 +584,9 @@ href = "mailto:iyamelardo@gmail.com"
 
         < div className = "contact-foot" >
             <span>MANILA, PHILIPPINES </span>
-
-
-    < a href = "#top" > BACK TO TOP ↑</a>
-        </div>
-        </section>
+            < a href = "#top" > BACK TO TOP ↑</a>
+                </div>
+                </section>
 
 {/* FOOTER */ }
 <footer className="footer" >
