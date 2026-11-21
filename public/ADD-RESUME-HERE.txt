@@ -1,1 +1,0 @@
-Copy your PDF resume into this folder and name it resume.pdf. The portfolio's Resume link opens /resume.pdf.\n

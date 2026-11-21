@@ -29,7 +29,7 @@ const projects: Project[] = [
         summary:
             "A web-based queue management system for university services.",
         details:
-            "My contribution included building UI components and core features, testing the system, identifying issues, and helping with debugging and interface improvements. Original source files and screenshots can be added when recovered and reviewed.",
+            "My contribution included building UI components and core features, testing the system, identifying issues, and helping with debugging and interface improvements.",
         stack: ["PHP", "HTML", "CSS", "JavaScript", "Testing"],
         tone: "blue",
     },
@@ -144,17 +144,6 @@ aria-label="Main navigation"
 { label }
     </a>
           ))}
-
-<a
-            className="nav-resume"
-href = "/resume.pdf"
-target = "_blank"
-rel = "noreferrer"
-    >
-    RESUME<span>↗</span>
-        </a>
-        </nav>
-        </header>
 
 {/* HERO */ }
 <section
@@ -581,13 +570,6 @@ href = "mailto:iyamelardo@gmail.com"
         < div className = "contact-foot" >
             <span>MANILA, PHILIPPINES </span>
 
-            < a
-href = "/resume.pdf"
-target = "_blank"
-rel = "noreferrer"
-    >
-    VIEW RESUME ↗
-</a>
 
     < a href = "#top" > BACK TO TOP ↑</a>
         </div>

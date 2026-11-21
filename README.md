@@ -42,10 +42,6 @@ Open `app/page.tsx`:
 
 Project filters (All, Development, Design, Documentation) are generated from the project categories. Keep a project's `category` as one of those four values so filtering works.
 
-## Add your resume
-
-Copy your current PDF into `public/` and name it `resume.pdf`. The navigation and contact section already link to `/resume.pdf`.
-
 ## Interaction and transitions
 
 - Navigation links move to page sections.
@@ -60,7 +56,6 @@ Copy your current PDF into `public/` and name it `resume.pdf`. The navigation an
 2. Push this project to the repository.
 3. Sign in to Vercel with GitHub: https://vercel.com/
 4. Import the repository and deploy.
-5. Vercel will provide a public `*.vercel.app` URL you can add to your resume.
 
 Review the current Vercel Hobby plan terms before deploying.
 
