@@ -19,13 +19,18 @@ const SELECTOR = [
 const SKIP = ".site-header, .project-modal-overlay, .filter-row, .menu-toggle";
 
 // ===== Settings you can change =====
-const START = 0.95; // text starts typing when it reaches this height of the screen (0 = top, 1 = bottom)
-const END = 0.3; // text is fully typed when it reaches this height of the screen
-const PX_PER_CHAR = 4; // scroll distance per letter for short texts. HIGHER = slower typing
-const MIN_RANGE = 60; // shortest scroll distance used for any text (px)
-const CATCH_UP = 0.3; // how quickly letters follow your scroll (0.1 = floaty, 0.5 = tight)
-const HERO_TYPES_ON_SCROLL = true; // true = the intro at the top types as you start scrolling
-const HERO_RANGE = 0.55; // how much scrolling (as a fraction of screen height) the intro takes
+const PX_PER_CHAR = 8; // scroll distance per letter. HIGHER = slower typing, longer sections
+const MIN_TYPE_PX = 400; // shortest scroll distance a section's typing can take (px)
+const HOLD_VH = 0.4; // pause with the full section shown (fraction of screen height)
+const ENTER_VH = 0.35; // typing starts when the section is this far into the screen (fraction of screen height)
+const CATCH_UP = 0.35; // how quickly letters follow your scroll (0.15 = floaty, 0.6 = tight)
+const HERO_AUTOPLAY = true; // true = the intro types by itself when the page opens, false = intro shown instantly
+const HERO_CPS = 28; // intro typing speed in letters per second
+const HERO_DELAY = 500; // wait before the intro starts (ms)
+const JITTER = 0.4; // randomness in the intro rhythm (0 = robotic, 0.5 = very human)
+const PUNCTUATION_PAUSE = 130; // extra pause (ms) after , . ; : ? ! — in the intro
+const FALLBACK_START = 0.9; // small screens: text starts typing at this screen height
+const FALLBACK_RANGE = 0.4; // small screens: longest scroll distance one text takes (fraction of screen height)
 // ===================================
 
 type Part = {
@@ -36,23 +41,46 @@ type Part = {
     full: string;
 };
 
+type Group = {
+    el: Element;
+    kind: "hero" | "pin";
+    pinned: boolean;
+    items: Item[];
+    chars: number;
+    top: number;
+    typeLen: number;
+    dest: number;
+};
+
 type Item = {
     el: Element;
     parts: Part[];
     caret: HTMLElement;
+    text: string;
     total: number;
     shown: number;
     start: number;
     range: number;
+    heroOffset: number;
+    group: Group;
 };
+
+type ItemBase = Omit<Item, "group">;
+
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 export default function ScrollReveals() {
     useEffect(() => {
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-        const items: Item[] = [];
+        const main = document.getElementById("top");
+        if (!main) return;
 
-        const prepare = (el: Element): Item | null => {
+        const items: Item[] = [];
+        const groups: Group[] = [];
+        const groupByEl = new Map<Element, Group>();
+
+        const prepare = (el: Element): ItemBase | null => {
             const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
             const nodes: Text[] = [];
             while (walker.nextNode()) {
@@ -78,14 +106,17 @@ export default function ScrollReveals() {
 
             if (parts.length === 0) return null;
 
+            const text = parts.map((p) => p.full).join("");
             return {
                 el,
                 parts,
                 caret: document.createElement("tw-c"),
-                total: parts.reduce((sum, p) => sum + p.full.length, 0),
+                text,
+                total: text.length,
                 shown: -1,
                 start: 0,
                 range: 1,
+                heroOffset: 0,
             };
         };
 
@@ -108,84 +139,143 @@ export default function ScrollReveals() {
             }
         };
 
+        // Collect every text, grouped by the section it lives in
         document.querySelectorAll(SELECTOR).forEach((el) => {
             if (el.closest(SKIP)) return;
             if (el.querySelector(SELECTOR)) return;
-            const item = prepare(el);
-            if (item) items.push(item);
+            const host = el.closest(".hero, .pin");
+            if (!host) return;
+
+            const base = prepare(el);
+            if (!base) return;
+
+            let g = groupByEl.get(host);
+            if (!g) {
+                g = {
+                    el: host,
+                    kind: host.classList.contains("hero") ? "hero" : "pin",
+                    pinned: false,
+                    items: [],
+                    chars: 0,
+                    top: 0,
+                    typeLen: 0,
+                    dest: 0,
+                };
+                groupByEl.set(host, g);
+                groups.push(g);
+            }
+
+            const item: Item = { ...base, group: g };
+            g.items.push(item);
+            g.chars += item.total;
+            items.push(item);
         });
 
-        // Works out, for every text, the scroll range in which it gets typed
+        // ----- Intro: types once by itself, with a human rhythm -----
+        const heroItems = items.filter((i) => i.group.kind === "hero");
+        const heroText = heroItems.map((i) => i.text).join("");
+        const heroTimes: number[] = [];
+        let acc = 0;
+        let heroOff = 0;
+        heroItems.forEach((i) => {
+            i.heroOffset = heroOff;
+            heroOff += i.total;
+        });
+        for (let i = 0; i < heroText.length; i++) {
+            acc += (1000 / HERO_CPS) * (1 + (Math.random() * 2 - 1) * JITTER);
+            if (/[,.;:?!—]/.test(heroText[i])) acc += PUNCTUATION_PAUSE;
+            heroTimes.push(acc);
+        }
+        const skipHero = !HERO_AUTOPLAY || window.scrollY > 200;
+        let heroIdx = skipHero ? heroTimes.length : 0;
+        const heroT0 = performance.now() + HERO_DELAY;
+
+        // ----- Layout: gives every section its pinned scroll distance -----
         const layout = () => {
             const vh = window.innerHeight;
             const y = window.scrollY;
-            const maxScroll = Math.max(document.documentElement.scrollHeight - vh, 0);
-            const startLine = vh * START;
-            const avail = Math.max(vh * (START - END), 80);
-            const tops = items.map((it) => it.el.getBoundingClientRect().top + y);
+            const hold = vh * HOLD_VH;
+            const enter = vh * ENTER_VH;
 
-            // Page too short to scroll: show everything
-            if (maxScroll < 50) {
-                items.forEach((it) => {
-                    it.start = -100000;
-                    it.range = 1;
-                });
-                return;
-            }
+            const kids = (Array.from(main.children) as HTMLElement[]).filter(
+                (c) => getComputedStyle(c).position !== "fixed"
+            );
 
-            // Texts already on screen at the very top of the page
-            const hero: number[] = [];
-            items.forEach((it, i) => {
-                if (tops[i] - startLine <= 0) hero.push(i);
+            // 1) a section can pin only if it fits on one screen
+            groups.forEach((g) => {
+                if (g.kind !== "pin") return;
+                const host = g.el as HTMLElement;
+                g.pinned = host.offsetHeight <= vh + 2;
+                host.classList.toggle("pin-off", !g.pinned);
             });
-            const heroSet = new Set(hero);
 
-            if (HERO_TYPES_ON_SCROLL) {
-                const sum = hero.reduce((a, i) => a + items[i].total, 0) || 1;
-                const budget = Math.min(vh * HERO_RANGE, maxScroll);
-                let cursor = 0;
-                hero.forEach((i) => {
-                    const r = Math.max((budget * items[i].total) / sum, 30);
-                    items[i].start = cursor;
-                    items[i].range = r;
-                    cursor += r;
-                });
-            } else {
-                hero.forEach((i) => {
-                    items[i].start = -100000;
-                    items[i].range = 1;
-                });
+            // 2) extra scroll distance after each pinned section (added as a top margin on whatever follows it)
+            let cursor = main.getBoundingClientRect().top + y + main.clientTop;
+            let pending = 0;
+            for (const kid of kids) {
+                kid.style.marginTop = pending ? `${pending}px` : "";
+                cursor += pending;
+
+                const g = groupByEl.get(kid);
+                const h = kid.offsetHeight;
+                pending = 0;
+
+                if (g && g.kind === "pin" && g.pinned) {
+                    g.top = cursor;
+                    g.typeLen = Math.max(g.chars * PX_PER_CHAR, MIN_TYPE_PX);
+                    g.dest = Math.max(g.top, g.top - enter + g.typeLen);
+                    pending = Math.max(g.typeLen + hold - enter, 0) + Math.max(vh - h, 0);
+                }
+                cursor += h;
             }
 
-            items.forEach((it, i) => {
-                if (heroSet.has(i)) return;
-                let s = tops[i] - startLine;
-                let r = Math.min(Math.max(it.total * PX_PER_CHAR, MIN_RANGE), avail);
+            // 3) a typing window for every text
+            const maxScroll = Math.max(document.documentElement.scrollHeight - vh, 0);
 
-                // Near the end of the page: make sure the text still finishes before the bottom
-                if (s + r > maxScroll) {
-                    r = Math.max(Math.min(r, maxScroll - Math.max(s, 0)), MIN_RANGE);
-                    s = maxScroll - r;
+            groups.forEach((g) => {
+                if (g.kind === "hero") return;
+
+                if (g.pinned) {
+                    let cum = 0;
+                    g.items.forEach((it) => {
+                        it.start = g.top - enter + (cum / g.chars) * g.typeLen;
+                        it.range = Math.max((it.total / g.chars) * g.typeLen, 1);
+                        cum += it.total;
+                    });
+                } else {
+                    g.items.forEach((it) => {
+                        const top = it.el.getBoundingClientRect().top + y;
+                        let s = top - vh * FALLBACK_START;
+                        let r = Math.min(Math.max(it.total * 4, 60), vh * FALLBACK_RANGE);
+                        if (s + r > maxScroll) {
+                            r = Math.max(Math.min(r, maxScroll - Math.max(s, 0)), 30);
+                            s = maxScroll - r;
+                        }
+                        it.start = s;
+                        it.range = r;
+                    });
                 }
-                it.start = s;
-                it.range = r;
             });
         };
 
-        const targetOf = (it: Item, y: number) => {
-            const p = (y - it.start) / it.range;
-            return Math.max(0, Math.min(it.total, Math.round(p * it.total)));
+        const targetFor = (it: Item, y: number) => {
+            if (it.group.kind === "hero") return clamp(heroIdx - it.heroOffset, 0, it.total);
+            return clamp(Math.round(((y - it.start) / it.range) * it.total), 0, it.total);
         };
 
         let raf = 0;
 
-        const frame = () => {
+        const frame = (now: number) => {
             raf = 0;
             const y = window.scrollY;
             let busy = false;
 
+            const elapsed = now - heroT0;
+            while (heroIdx < heroTimes.length && heroTimes[heroIdx] <= elapsed) heroIdx++;
+            const heroDone = heroIdx >= heroTimes.length;
+
             for (const it of items) {
-                const target = targetOf(it, y);
+                const target = targetFor(it, y);
                 if (it.shown === target) continue;
                 const diff = target - it.shown;
                 const step = Math.max(1, Math.ceil(Math.abs(diff) * CATCH_UP));
@@ -194,44 +284,74 @@ export default function ScrollReveals() {
                 if (it.shown !== target) busy = true;
             }
 
-            if (busy) raf = requestAnimationFrame(frame);
+            if (busy || !heroDone) raf = requestAnimationFrame(frame);
         };
 
         const schedule = () => {
             if (!raf) raf = requestAnimationFrame(frame);
         };
 
-        const relayout = () => {
-            layout();
-            schedule();
+        let layoutRaf = 0;
+        const scheduleLayout = () => {
+            if (layoutRaf) return;
+            layoutRaf = requestAnimationFrame(() => {
+                layoutRaf = 0;
+                layout();
+                schedule();
+            });
         };
 
-        // Start: show each text exactly as it should look at the current scroll position
+        // Menu links jump to the point where that section is fully typed
+        const onClick = (e: MouseEvent) => {
+            const a = (e.target as Element).closest('a[href^="#"]');
+            if (!a) return;
+            const id = a.getAttribute("href")?.slice(1);
+            if (!id || id === "top") return;
+            const target = document.getElementById(id);
+            if (!target) return;
+            const g = groupByEl.get(target);
+            if (!g || !g.pinned) return;
+            e.preventDefault();
+            window.scrollTo({ top: g.dest, behavior: "smooth" });
+        };
+
+        // ----- Start -----
+        document.documentElement.classList.add("tw-js");
         layout();
+
         const y0 = window.scrollY;
         items.forEach((it) => {
-            it.shown = targetOf(it, y0);
+            it.shown = targetFor(it, y0);
             render(it, it.shown);
         });
 
-        document.documentElement.classList.add("tw-js");
-
         window.addEventListener("scroll", schedule, { passive: true });
-        window.addEventListener("resize", relayout);
-        window.addEventListener("load", relayout);
+        window.addEventListener("resize", scheduleLayout);
+        window.addEventListener("load", scheduleLayout);
+        document.addEventListener("click", onClick);
         if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(relayout);
+            document.fonts.ready.then(scheduleLayout);
         }
-        const resizeObserver = new ResizeObserver(relayout);
-        resizeObserver.observe(document.body);
+        const resizeObserver = new ResizeObserver(scheduleLayout);
+        resizeObserver.observe(main);
+
+        schedule();
 
         return () => {
             window.removeEventListener("scroll", schedule);
-            window.removeEventListener("resize", relayout);
-            window.removeEventListener("load", relayout);
+            window.removeEventListener("resize", scheduleLayout);
+            window.removeEventListener("load", scheduleLayout);
+            document.removeEventListener("click", onClick);
             resizeObserver.disconnect();
             cancelAnimationFrame(raf);
+            cancelAnimationFrame(layoutRaf);
             document.documentElement.classList.remove("tw-js");
+
+            Array.from(main.children).forEach((c) => {
+                (c as HTMLElement).style.marginTop = "";
+                c.classList.remove("pin-off");
+            });
+
             items.forEach((item) => {
                 item.caret.remove();
                 item.parts.forEach((p) => {

@@ -171,7 +171,7 @@ aria-label="Main navigation"
                                         </div>
                                         </section>
 
-                                        < section className = "work section-shell" id = "work" >
+                                        < section className = "work section-shell pin" id = "work" >
                                             <div className="section-top" >
                                                 <span>01 / SELECTED WORK </span>
                                                     < span > REAL ROLES.HONEST CONTRIBUTIONS.</span>
@@ -254,14 +254,21 @@ type = "button"
         </article>
                     ))}
 </div>
+    </section>
 
-    < div className = "additional-section" >
-        <div className="additional-heading" >
-            <div>
-            <span className="eyebrow" > MORE EXPERIENCE </span>
-                < h3 > Other academic work.</h3>
+    < section className = "work section-shell pin" id = "more-work" >
+        <div className="section-top" >
+            <span>02 / MORE WORK </span>
+                < span > DESIGN & amp; DOCUMENTATION </span>
                     </div>
-                    <p>
+
+                    < div className = "additional-section" >
+                        <div className="additional-heading" >
+                            <div>
+                            <span className="eyebrow" > MORE EXPERIENCE </span>
+                                < h3 > Other academic work.</h3>
+                                    </div>
+                                    <p>
                             Design and documentation contributions from academic projects.
                         </p>
     </div>
@@ -289,6 +296,79 @@ type = "button"
 </div>
     </div>
     </section>
+
+    < section className = "toolkit section-shell pin" id = "toolkit" >
+        <div className="section-top" >
+            <span>03 / TOOLKIT </span>
+            < span > TOOLS I’VE WORKED WITH </span>
+                </div>
+
+                < div className = "section-heading" >
+                    <h2>
+                    Things I use
+                        < br />
+                        <span>to make things.</span>
+                            </h2>
+                            <p>
+                        A growing set of tools and skills from coursework, collaboration,
+    and personal practice.
+                    </p>
+        </div>
+
+        < div className = "skill-grid" >
+            {
+                skillGroups.map((group, index) => (
+                    <article className= "skill-card" key = { group.title } >
+                    <span className="skill-index" > 0{ index + 1} / </span>
+            < h3 > { group.title } </h3>
+            < p > { group.note } </p>
+            < div className = "tag-list" >
+            {
+                group.items.map((item) => (
+                    <span key= { item } > { item } </span>
+                ))
+            }
+                </div>
+                </article>
+                    ))}
+</div>
+    </section>
+
+    < section className = "contact section-shell pin" id = "contact" >
+        <div className="section-top" >
+            <span>04 / CONTACT </span>
+            < span > OPEN TO OPPORTUNITIES </span>
+                </div>
+
+                < div className = "contact-content" >
+                    <p className="eyebrow" > HAVE A PROJECT OR OPPORTUNITY ? </p>
+                        <h2>
+                        Let’s make
+    < br />
+    <span>something matter.</span>
+        </h2>
+        <p>
+I’m open to internship opportunities, collaborations, and
+                        conversations about technology and design.
+                    </p>
+    < a className = "button-primary" href = "mailto:iyamelardo@gmail.com" >
+        iyamelardo@gmail.com<span>↗</span>
+            </a>
+            </div>
+
+            < div className = "contact-foot" >
+                <span>MANILA, PHILIPPINES </span>
+                < a href = "#top" > BACK TO TOP ↑</a>
+                    </div>
+                    </section>
+
+                    < footer className = "footer" >
+                        <a className="wordmark" href = "#top" >
+                            IYA<span>.</span>
+                            </a>
+                            < span > Designed, built, and still evolving.</span>
+                                <span>© { new Date().getFullYear() } IYA ELARDO </span>
+                                    </footer>
 
 {
     selectedProject && (
@@ -353,79 +433,6 @@ type = "button"
                                                                         </section>
                                                                         </div>
             )}
-
-<section className="toolkit section-shell" id = "toolkit" >
-    <div className="section-top" >
-        <span>02 / TOOLKIT </span>
-        < span > TOOLS I’VE WORKED WITH </span>
-            </div>
-
-            < div className = "section-heading" >
-                <h2>
-                Things I use
-                    < br />
-                    <span>to make things.</span>
-                        </h2>
-                        <p>
-                        A growing set of tools and skills from coursework, collaboration,
-    and personal practice.
-                    </p>
-        </div>
-
-        < div className = "skill-grid" >
-            {
-                skillGroups.map((group, index) => (
-                    <article className= "skill-card" key = { group.title } >
-                    <span className="skill-index" > 0{ index + 1} / </span>
-            < h3 > { group.title } </h3>
-            < p > { group.note } </p>
-            < div className = "tag-list" >
-            {
-                group.items.map((item) => (
-                    <span key= { item } > { item } </span>
-                ))
-            }
-                </div>
-                </article>
-                    ))}
-</div>
-    </section>
-
-    < section className = "contact section-shell" id = "contact" >
-        <div className="section-top" >
-            <span>03 / CONTACT </span>
-            < span > OPEN TO OPPORTUNITIES </span>
-                </div>
-
-                < div className = "contact-content" >
-                    <p className="eyebrow" > HAVE A PROJECT OR OPPORTUNITY ? </p>
-                        <h2>
-                        Let’s make
-    < br />
-    <span>something matter.</span>
-        </h2>
-        <p>
-I’m open to internship opportunities, collaborations, and
-                        conversations about technology and design.
-                    </p>
-    < a className = "button-primary" href = "mailto:iyamelardo@gmail.com" >
-        iyamelardo@gmail.com<span>↗</span>
-            </a>
-            </div>
-
-            < div className = "contact-foot" >
-                <span>MANILA, PHILIPPINES </span>
-                < a href = "#top" > BACK TO TOP ↑</a>
-                    </div>
-                    </section>
-
-                    < footer className = "footer" >
-                        <a className="wordmark" href = "#top" >
-                            IYA<span>.</span>
-                            </a>
-                            < span > Designed, built, and still evolving.</span>
-                                <span>© { new Date().getFullYear() } IYA ELARDO </span>
-                                    </footer>
-                                    </main>
+</main>
     );
 }
