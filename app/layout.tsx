@@ -1,7 +1,6 @@
-
 import type { Metadata } from "next";
 import "./globals.css";
-import ScrollProgress from "./scroll-progress";
+import ScrollReveals from "./scroll-reveals";
 
 export const metadata: Metadata = {
     title: "Iya Elardo | IT Student Portfolio",
@@ -15,9 +14,9 @@ export default function RootLayout({
     return (
         <html lang= "en" >
         <body>
-        <ScrollProgress />
+        <ScrollReveals />
     { children }
     </body>
         </html>
-  );
+    );
 }
