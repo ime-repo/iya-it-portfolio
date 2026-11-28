@@ -7,37 +7,26 @@ const SELECTOR = [
     "h1",
     "h2",
     "h3",
-    "p",
-    ".eyebrow",
-    ".section-top > span",
-    ".button-primary",
-    ".text-link",
-    ".inline-link",
-    ".hero-meta > span",
-    ".skill-index",
-    ".tag-list > span",
-    ".role-row > span",
-    ".role-row > strong",
-    ".compact-project-top > span",
-    ".compact-project-number",
-    ".project-more-button",
-    ".contact-foot > span",
-    ".contact-foot > a",
-    ".footer > span",
+    ".hero-intro",
+    ".section-heading > p",
+    ".additional-heading p",
+    ".compact-project > p",
+    ".skill-card > p",
+    ".contact-content > p:not(.eyebrow)",
 ].join(", ");
 
 // Areas that stay static
 const SKIP = ".site-header, .project-modal-overlay, .filter-row, .menu-toggle";
 
 // ===== Settings you can change =====
-const START = 0.9; // text can start typing when it reaches this height of the screen (0 = top, 1 = bottom)
-const TYPE_CPS = 26; // typing speed in letters per second at slow scrolling
-const DELETE_CPS = 45; // deleting speed in letters per second at slow scrolling
-const SPEED_GAIN = 0.12; // how much faster it types when you scroll faster (0 = always same speed)
-const MAX_CPS = 120; // fastest possible typing speed
+const START = 0.85; // text can start typing when it reaches this height of the screen (0 = top, 1 = bottom)
+const TYPE_CPS = 16; // typing speed in letters per second (lower = slower)
+const DELETE_CPS = 30; // deleting speed in letters per second
+const SPEED_GAIN = 0.02; // how much faster it types when you scroll faster (0 = always the same speed)
+const MAX_CPS = 30; // the fastest it can ever type
 const JITTER = 0.4; // randomness in the rhythm (0 = robotic, 0.5 = very human)
-const PUNCTUATION_PAUSE = 110; // extra pause (ms) after , . ; : ? ! —
-const IDLE_MS = 180; // typing stops this long after you stop scrolling
+const PUNCTUATION_PAUSE = 150; // extra pause (ms) after , . ; : ? ! —
+const IDLE_MS = 150; // typing stops this long after you stop scrolling
 // ===================================
 
 type Part = {
