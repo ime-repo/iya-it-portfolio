@@ -19,14 +19,13 @@ const SELECTOR = [
 const SKIP = ".site-header, .project-modal-overlay, .filter-row, .menu-toggle";
 
 // ===== Settings you can change =====
-const START = 0.85; // text can start typing when it reaches this height of the screen (0 = top, 1 = bottom)
-const TYPE_CPS = 16; // typing speed in letters per second (lower = slower)
-const DELETE_CPS = 30; // deleting speed in letters per second
-const SPEED_GAIN = 0.02; // how much faster it types when you scroll faster (0 = always the same speed)
-const MAX_CPS = 30; // the fastest it can ever type
-const JITTER = 0.4; // randomness in the rhythm (0 = robotic, 0.5 = very human)
-const PUNCTUATION_PAUSE = 150; // extra pause (ms) after , . ; : ? ! —
-const IDLE_MS = 150; // typing stops this long after you stop scrolling
+const START = 0.95; // text starts typing when it reaches this height of the screen (0 = top, 1 = bottom)
+const END = 0.3; // text is fully typed when it reaches this height of the screen
+const PX_PER_CHAR = 4; // scroll distance per letter for short texts. HIGHER = slower typing
+const MIN_RANGE = 60; // shortest scroll distance used for any text (px)
+const CATCH_UP = 0.3; // how quickly letters follow your scroll (0.1 = floaty, 0.5 = tight)
+const HERO_TYPES_ON_SCROLL = true; // true = the intro at the top types as you start scrolling
+const HERO_RANGE = 0.55; // how much scrolling (as a fraction of screen height) the intro takes
 // ===================================
 
 type Part = {
@@ -41,10 +40,10 @@ type Item = {
     el: Element;
     parts: Part[];
     caret: HTMLElement;
-    text: string;
     total: number;
-    offset: number;
     shown: number;
+    start: number;
+    range: number;
 };
 
 export default function ScrollReveals() {
@@ -79,15 +78,14 @@ export default function ScrollReveals() {
 
             if (parts.length === 0) return null;
 
-            const text = parts.map((p) => p.full).join("");
             return {
                 el,
                 parts,
                 caret: document.createElement("tw-c"),
-                text,
-                total: text.length,
-                offset: 0,
+                total: parts.reduce((sum, p) => sum + p.full.length, 0),
                 shown: -1,
+                start: 0,
+                range: 1,
             };
         };
 
@@ -110,135 +108,128 @@ export default function ScrollReveals() {
             }
         };
 
-        let running = 0;
         document.querySelectorAll(SELECTOR).forEach((el) => {
             if (el.closest(SKIP)) return;
             if (el.querySelector(SELECTOR)) return;
             const item = prepare(el);
-            if (!item) return;
-            item.offset = running;
-            running += item.total;
-            items.push(item);
+            if (item) items.push(item);
         });
 
-        const all = items.map((i) => i.text).join("");
-
-        // pos = how many letters are typed on the whole page, counted in page order
-        let pos = 0;
-
-        const setPos = (next: number) => {
-            pos = next;
-            for (const item of items) {
-                const count = Math.max(0, Math.min(item.total, pos - item.offset));
-                if (count !== item.shown) {
-                    item.shown = count;
-                    render(item, count);
-                }
-            }
-        };
-
-        // floor = letters already scrolled off the top (finished instantly)
-        // allowed = letters that have entered the screen (can be typed)
-        const bounds = () => {
+        // Works out, for every text, the scroll range in which it gets typed
+        const layout = () => {
             const vh = window.innerHeight;
-            let floor = 0;
-            let allowed = 0;
+            const y = window.scrollY;
+            const maxScroll = Math.max(document.documentElement.scrollHeight - vh, 0);
+            const startLine = vh * START;
+            const avail = Math.max(vh * (START - END), 80);
+            const tops = items.map((it) => it.el.getBoundingClientRect().top + y);
 
-            for (const item of items) {
-                if (item.el.getBoundingClientRect().bottom < 0) floor = item.offset + item.total;
-                else break;
+            // Page too short to scroll: show everything
+            if (maxScroll < 50) {
+                items.forEach((it) => {
+                    it.start = -100000;
+                    it.range = 1;
+                });
+                return;
             }
-            for (const item of items) {
-                if (item.el.getBoundingClientRect().top < vh * START) {
-                    allowed = item.offset + item.total;
-                } else break;
+
+            // Texts already on screen at the very top of the page
+            const hero: number[] = [];
+            items.forEach((it, i) => {
+                if (tops[i] - startLine <= 0) hero.push(i);
+            });
+            const heroSet = new Set(hero);
+
+            if (HERO_TYPES_ON_SCROLL) {
+                const sum = hero.reduce((a, i) => a + items[i].total, 0) || 1;
+                const budget = Math.min(vh * HERO_RANGE, maxScroll);
+                let cursor = 0;
+                hero.forEach((i) => {
+                    const r = Math.max((budget * items[i].total) / sum, 30);
+                    items[i].start = cursor;
+                    items[i].range = r;
+                    cursor += r;
+                });
+            } else {
+                hero.forEach((i) => {
+                    items[i].start = -100000;
+                    items[i].range = 1;
+                });
             }
-            return { floor, allowed: Math.max(allowed, floor) };
+
+            items.forEach((it, i) => {
+                if (heroSet.has(i)) return;
+                let s = tops[i] - startLine;
+                let r = Math.min(Math.max(it.total * PX_PER_CHAR, MIN_RANGE), avail);
+
+                // Near the end of the page: make sure the text still finishes before the bottom
+                if (s + r > maxScroll) {
+                    r = Math.max(Math.min(r, maxScroll - Math.max(s, 0)), MIN_RANGE);
+                    s = maxScroll - r;
+                }
+                it.start = s;
+                it.range = r;
+            });
         };
 
-        let dir = 0;
-        let lastY = window.scrollY;
-        let lastT = 0;
-        let lastScrollAt = -10000;
-        let vel = 0;
-        let nextAt = 0;
+        const targetOf = (it: Item, y: number) => {
+            const p = (y - it.start) / it.range;
+            return Math.max(0, Math.min(it.total, Math.round(p * it.total)));
+        };
+
         let raf = 0;
 
-        const delay = (typing: boolean, ch: string) => {
-            const base = typing ? TYPE_CPS : DELETE_CPS;
-            const cps = Math.min(MAX_CPS, base + vel * SPEED_GAIN);
-            let d = (1000 / cps) * (1 + (Math.random() * 2 - 1) * JITTER);
-            if (typing && /[,.;:?!—]/.test(ch)) d += PUNCTUATION_PAUSE;
-            return d;
-        };
-
-        const frame = (now: number) => {
+        const frame = () => {
             raf = 0;
-            const { floor, allowed } = bounds();
-
-            if (pos < floor) setPos(floor);
-            else if (pos > allowed) setPos(allowed);
-
             const y = window.scrollY;
-            const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
-            const atTop = y <= 1;
-            const recent = now - lastScrollAt < IDLE_MS;
-            const typing = dir > 0 && (recent || atBottom);
-            const deleting = dir < 0 && (recent || atTop);
+            let busy = false;
 
-            if (nextAt < now - 30) nextAt = now - 30;
-
-            let moved = 0;
-            while (moved < 10 && now >= nextAt) {
-                if (typing && pos < allowed) {
-                    setPos(pos + 1);
-                    nextAt += delay(true, all[pos - 1] ?? "");
-                } else if (deleting && pos > floor) {
-                    setPos(pos - 1);
-                    nextAt += delay(false, "");
-                } else {
-                    break;
-                }
-                moved++;
+            for (const it of items) {
+                const target = targetOf(it, y);
+                if (it.shown === target) continue;
+                const diff = target - it.shown;
+                const step = Math.max(1, Math.ceil(Math.abs(diff) * CATCH_UP));
+                it.shown += Math.sign(diff) * Math.min(Math.abs(diff), step);
+                render(it, it.shown);
+                if (it.shown !== target) busy = true;
             }
 
-            const more =
-                recent || (typing && pos < allowed) || (deleting && pos > floor);
-            if (more) raf = requestAnimationFrame(frame);
+            if (busy) raf = requestAnimationFrame(frame);
         };
 
         const schedule = () => {
             if (!raf) raf = requestAnimationFrame(frame);
         };
 
-        const onScroll = () => {
-            const now = performance.now();
-            const y = window.scrollY;
-            const dy = y - lastY;
-            if (dy !== 0) {
-                if (now - lastT > 250) vel = 0;
-                dir = dy > 0 ? 1 : -1;
-                const dt = Math.max(now - lastT, 8);
-                vel = vel * 0.6 + ((Math.abs(dy) / dt) * 1000) * 0.4;
-                lastY = y;
-                lastT = now;
-                lastScrollAt = now;
-            }
+        const relayout = () => {
+            layout();
             schedule();
         };
 
-        // Start: blank at the very top, or already finished if the page loads scrolled
-        const start = bounds();
-        setPos(window.scrollY > 4 ? start.allowed : 0);
+        // Start: show each text exactly as it should look at the current scroll position
+        layout();
+        const y0 = window.scrollY;
+        items.forEach((it) => {
+            it.shown = targetOf(it, y0);
+            render(it, it.shown);
+        });
 
         document.documentElement.classList.add("tw-js");
 
-        window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", schedule);
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", relayout);
+        window.addEventListener("load", relayout);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(relayout);
+        }
+        const resizeObserver = new ResizeObserver(relayout);
+        resizeObserver.observe(document.body);
 
         return () => {
-            window.removeEventListener("scroll", onScroll);
-            window.removeEventListener("resize", schedule);
+            window.removeEventListener("scroll", schedule);
+            window.removeEventListener("resize", relayout);
+            window.removeEventListener("load", relayout);
+            resizeObserver.disconnect();
             cancelAnimationFrame(raf);
             document.documentElement.classList.remove("tw-js");
             items.forEach((item) => {
